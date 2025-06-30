@@ -1,0 +1,282 @@
+---
+title: "On the Rise: Investigating Youth Crime Across Victoria"
+author: "S4007769 Assessment 3"
+output:
+  revealjs::revealjs_presentation:
+    theme: serif
+    transition: fade
+    css: style.css
+    progress: true
+    
+---
+
+## Introduction
+<div class="multi-column">
+<div class="small-text">
+Crime is a complex and evolving issue across Victoria, influencing public safety, policy, and community wellbeing. In recent years, growing attention has been directed toward youth crime as a significant area of concern and danger to local communities. Youth offenders have been responsible for serious crimes including aggravated burglaries and car thefts.
+
+
+With growing concern among Victorians about crime within the community, these slides investigate the current state of crime in Victoria, with a focus on rising youth crime through examination of offender numbers, offence locations and the types of crime.
+</div>
+
+## 
+<div class="multi-column">
+<div class="left-column">
+- Recently Victoria has seen a surge in crime, with recorded offences in Victoria in 2024 has rising to a decade high
+- Post-covid has seen a strong upward trend in the total number of crimes committed
+</div>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+```{r, echo = FALSE}
+library(dplyr) #importing libraries
+library(ggplot2)
+library(plotly)
+library(leaflet)
+library(sf)
+library(htmlwidgets)
+library(htmltools)
+library(plotly)
+
+age_total <- read.csv("by_year_age_total.csv") #importing data
+age_by_year <- read.csv("by_year_age.csv")
+total_incidents <- read.csv("total_incidents.csv")
+total_population <- read.csv("LGA_age.csv")
+year_change <- read.csv("category_year_change.csv")
+category_outcome <- read.csv("category_outcome.csv")
+
+total_incidents$Year <- as.character(total_incidents$Year) #converting years column to characters
+
+#creating first plot
+plot1 <- ggplot(total_incidents, aes(x = Year,y = total_offender_incidents, text = paste("Year:", Year,"<br>Total recorded offences:", total_offender_incidents))) +
+  geom_bar(stat = "identity",fill = "navy") +
+  labs(title = "Victorian Total Recorded Offences By Year", 
+       x = "Year",
+       y = "Number of recorded offences") +
+  scale_y_continuous(labels = function(x) format(x, big.mark = ",", scientific = FALSE)) +
+  theme(plot.title = element_text(family = "serif", face = "bold", size = 15),
+        plot.subtitle = element_text(family = "serif", size = 12),
+        axis.title.x = element_text(family = "serif", face = "bold", size = 12),
+        axis.title.y = element_text(family = "serif", face = "bold", size = 12),
+        axis.text.x = element_text(family = "serif", size = 8),
+        axis.text.y = element_text(family = "serif", size = 8),
+        legend.position = "none",
+        panel.spacing = unit(0.75, "lines"),
+        strip.background = element_rect(fill = "light grey", color = "black"),
+        strip.text = element_text(face = "bold", size = 10),
+        panel.background = element_rect(fill = "white", color = NA),
+        plot.background = element_rect(fill = "white", color = NA),
+        panel.grid.major = element_line(color = "#CCCCCC"),
+        panel.grid.minor = element_blank()) +
+  coord_cartesian(clip = "off")
+```
+
+
+```{r fig.align="right", echo = FALSE}
+ggplotly(plot1, tooltip = "text") %>% layout(width = 750, height = 600) #output plot
+```
+
+
+##
+<div class="multi-column">
+<div class="left-column-2">
+- This line graph displays Victorian alleged criminal incidents by age group for recent years
+- A majority of Victorian crime is committed by 20-45 year olds, however each age group remains represented with some amount of offences being committed
+- However, one age group which has seen growth and offence levels above a normal and consistent levels is 10-14 year olds and 15-17 year olds
+</div>
+
+
+```{r, echo = FALSE}
+#creating second plot
+plot2 <- ggplot(age_total, aes(x = Age.Group, y = Total_Incidents, color = factor(Year), group = Year,text = paste("Age Group:", Age.Group,"<br>Total Incidents:", Total_Incidents,"<br>Year:", Year))) +
+    geom_line(linewidth = 1) +
+    geom_point() +
+    labs(title = "Victorian Alleged Offender Incidents By Age Group\nAlleged incidents by all ages (Where age data is available)",
+         x = "Age Group",
+         y = "Alleged Criminal Incidents",
+         color = "Year") +
+    scale_color_brewer(palette = "Set2") +
+    theme(plot.title = element_text(family = "serif", face = "bold", size = 15),
+          plot.subtitle = element_text(family = "serif", size = 12),
+          axis.title.x = element_text(family = "serif", face = "bold", size = 12),
+          axis.title.y = element_text(family = "serif", face = "bold", size = 12),
+          axis.text.x = element_text(family = "serif", size = 8, angle=45,hjust=1),
+          axis.text.y = element_text(family = "serif", size = 8),
+          panel.spacing = unit(0.75, "lines"),
+          strip.background = element_rect(fill = "light grey", color = "black"),
+          strip.text = element_text(face = "bold", size = 10),
+          panel.background = element_rect(fill = "white", color = NA),
+          plot.background = element_rect(fill = "white", color = NA),
+          panel.grid.major = element_line(color = "#CCCCCC"),
+          panel.grid.minor = element_blank()) +
+    coord_cartesian(clip = "off")
+```
+
+
+```{r fig.align="right", echo = FALSE}
+ggplotly(plot2, tooltip = "text") %>%
+    layout(title = list(text = "<b>Victorian Alleged Offender Incidents By Age Group</b><br><sup>Alleged incidents by all ages (Where age data is available)</sup>")) %>% 
+  layout(width = 750, height = 600) #outputting plot
+```
+
+
+
+##
+<div class="multi-column">
+<div class="left-column-3">
+- One major concern of many Victorians is youth crime, with all age groups under 18 being up on previous years
+- Both 10-14 year old and 15-17 age groups in 2024 saw increased numbers of offences, and strayed away from the general trend line of previous years, where youth crime was consistent
+- This increased gap between youth crime in previous years and 2024 is concerning for many Victorians as more youth are involved in crime
+</div>
+
+
+```{r, echo = FALSE}
+#creating third plot
+plot3 <- ggplot(age_by_year, aes(x = Age.Group, y = Total_Incidents, color = as.factor(Year), group = Year, text = paste("Age Group:", Age.Group,"<br>Total Incidents:", Total_Incidents,"<br>Year:", Year))) +
+    geom_line(linewidth = 1) +
+    scale_color_manual(values = c("2024" = "blue", "Other" = "grey")) +
+    geom_point() +
+    labs(title = "Victorian Alleged Offender Incidents By Young People\nAlleged incidents by 10-24 year olds by age group",
+         x = "Age Group",
+         y = "Alleged Offender Incidents",
+         color = "Year") +
+    theme(plot.title = element_text(family = "serif", face = "bold", size = 15),
+          plot.subtitle = element_text(family = "serif", size = 12),
+          axis.title.x = element_text(family = "serif", face = "bold", size = 12),
+          axis.title.y = element_text(family = "serif", face = "bold", size = 12),
+          axis.text.x = element_text(family = "serif", size = 8, angle=45,hjust=1),
+          axis.text.y = element_text(family = "serif", size = 8),
+          panel.spacing = unit(0.75, "lines"),
+          strip.background = element_rect(fill = "light grey", color = "black"),
+          strip.text = element_text(face = "bold", size = 10),
+          panel.background = element_rect(fill = "white", color = NA),
+          plot.background = element_rect(fill = "white", color = NA),
+          panel.grid.major = element_line(color = "#CCCCCC"),
+          panel.grid.minor = element_blank()) +
+    coord_cartesian(clip = "off")
+```
+
+
+```{r fig.align="right", echo = FALSE}
+ggplotly(plot3, tooltip = "text") %>%
+    layout(title = list(text = "<b>Victorian Alleged Offender Incidents by Young People</b><br><sup>Alleged incidents involving 10–24 year olds, grouped by age</sup>")) %>% 
+  layout(width = 750, height = 600) #outputting plot
+
+```
+
+
+##
+<div class="multi-column">
+<div class="left-column-2">
+- Youth crime has not only increased, but it is also heavily prevalent in the majority of local government areas
+- The LGAs with the highest alleged incidents by youth include regionally Latrobe, Mount Alexander, Wodonga, Bendigo, with Melbourne being the highest in metropolitan areas
+- Interact with the visual to view your local government area
+</div>
+
+
+```{r fig.align="right", echo = FALSE}
+#creating fourth plot, code adapted from Baglin, J. (2024). Data Visualisation: From Theory to Practice. Chapter 7
+vic.lga.shp <- sf::st_read("vmlite_lga_cm.shp", quiet = TRUE)
+
+merge_lga_profiles <- merge(vic.lga.shp,total_population,by.x = "lga_name",by.y = "local_government_area", all.x = TRUE)
+
+plot4 <- leaflet(merge_lga_profiles) %>% 
+  setView(lng = 147, lat = -36.5, zoom = 6)
+
+pal <- colorNumeric("YlOrRd",domain = total_population$incidents_per_100k)
+
+labels <- sprintf("<strong>%s</strong><br/>%s", merge_lga_profiles$lga_name, ifelse(is.na(merge_lga_profiles$incidents_per_100k),"No Data For This LGA", paste0(round(merge_lga_profiles$incidents_per_100k,3), " Alleged offender incidents per 100k people"))) %>% 
+    lapply(htmltools::HTML)
+
+title <- tags$div(HTML('<h3>Victorian Youth Alleged Offender Incidents By LGA 2024</h3>', '<h5>Alleged incidents involving youth aged 10 to 17 for each LGA</h5>'))
+
+plot4 %>% addPolygons(fillColor = ~pal(incidents_per_100k),
+    weight = 2,
+    opacity = 1,
+    color = "#FFFFFF",
+    dashArray = "3",
+    fillOpacity = 0.8,
+    highlight = highlightOptions(
+    weight = 5,
+    color = "#666",
+    dashArray = "",
+    fillOpacity = 0.8,
+    bringToFront = TRUE),
+    label = labels,
+    labelOptions = labelOptions(
+    style = list("font-weight" = "normal", padding = "4px 9px"),
+    textsize = "14px",
+    direction = "auto")) %>% 
+  addLegend(pal = pal, 
+            values = ~incidents_per_100k[!is.na(incidents_per_100k)], 
+            opacity = 0.8, title = "<div>Alleged incidents<br/>per 100k people</div>",
+  position = "bottomright") %>% 
+  addControl(title, position = "topright")
+```
+
+
+
+
+##
+<div class="multi-column">
+<div class="left-column-4">
+- Since a rise in crime committed by youths is present all across Victoria which crimes are youths committing?
+- The main offence type which has seen a rise over the past year in Victoria by youth offenders is property and deception offences, up almost 5% in just one year
+- Property and deception offences involve dishonesty and interference with property, with offences such as theft, burglary and robbery being included
+- Other offences have remained at a similar level to previous years, however crimes against the person have decreased by over 3%
+</div>
+
+```{r, echo = FALSE}
+#creating plot5
+plot5 <- ggplot(year_change, aes(y = reorder(Offence.Division, y2024))) +
+  geom_segment(aes(x = y2023, xend = y2024, yend = Offence.Division), color = "black") +
+    geom_point(aes(x = y2023, color = "2023"), size = 6) +
+    geom_point(aes(x = y2024, color = "2024"), size = 6) +
+    geom_text(aes(x = y2023, label = paste0(round(y2023, 1), "%"), hjust = ifelse(y2023 < y2024, 1, -0.03)), color = "#1f77b4", size = 6, vjust = -1) +
+    geom_text(aes(x = y2024, label = paste0(round(y2024, 1), "%"), hjust = ifelse(y2024 > y2023, -0.03, 1)), color = "#d62728", size = 6, vjust = -1) +
+    scale_color_manual(name = "Year", values = c("2023" = "#1f77b4", "2024" = "#d62728")) +
+    scale_x_continuous(breaks = seq(0, 100, by = 10), 
+                       expand = expansion(mult = c(0.1, 0.1))) +
+    labs(title = "Change in Crime Share By Offence Division For Youth Offenders",
+         subtitle = "Percentage changes in distribution of offences committed between 2023 and 2024",
+         x = "Percentage of Total Crimes",
+         y = "Offence Division") +
+    theme(plot.title = element_text(family = "serif", face = "bold", size = 15),
+          plot.subtitle = element_text(family = "serif", size = 12),
+          axis.title.x = element_text(family = "serif", face = "bold", size = 12),
+          axis.title.y = element_text(family = "serif", face = "bold", size = 12),
+          axis.text.x = element_text(family = "serif", size = 8),
+          axis.text.y = element_text(family = "serif", size = 8),
+          panel.spacing = unit(0.75, "lines"),
+          strip.background = element_rect(fill = "light grey", color = "black"),
+          strip.text = element_text(face = "bold", size = 15),
+          panel.background = element_rect(fill = "white", color = NA),
+          plot.background = element_rect(fill = "white", color = NA),
+          panel.grid.major = element_line(color = "#CCCCCC"),
+          panel.grid.minor = element_blank()) +
+    coord_cartesian(clip = "off") 
+```
+
+
+```{r fig.align="right", echo = FALSE}
+plot5 #outputting plot
+```
+
+## State of crime
+<div class="multi-column">
+<div class="small-text">
+In Victoria, the total number of offences has been at a decade-long high in 2024, with a rise in the number of youth offenders committing crimes, which is of concern to our community. Youth crime occurs in all areas of the state, impacting all members of the community, with hotspots occurring in LGA’s including Melbourne, Latrobe, Mount Alexander and Wodonga. These youth offenders are committing a rising number of property and deception offences.
+</div>
+
+## References
+<div class="multi-column">
+<div class="small-text">
+Crime Statistics Agency Victoria. (2025). LGA Alleged Offenders Year Ending December 2024. Crime Statistics Agency; Victorian Government. https://www.crimestatistics.vic.gov.au/crime-statistics/latest-victorian-crime-data/download-data 
+
+Crime Statistics Agency Victoria. (2025). Alleged Offender Incidents Visualisation Year Ending December 2024. Crime Statistics Agency; Victorian Government. https://www.crimestatistics.vic.gov.au/crime-statistics/latest-victorian-crime-data/download-data 
+
+Crime Statistics Agency Victoria. (2025). LGA Recorded Offences Year Ending December 2024. Crime Statistics Agency; Victorian Government. https://www.crimestatistics.vic.gov.au/crime-statistics/latest-victorian-crime-data/download-data 
+</div>
